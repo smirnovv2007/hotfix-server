@@ -1,0 +1,16 @@
+services:
+  yuuki-hotfix:
+    image: node:21-alpine
+    container_name: yuuki-hotfix
+    user: "node"
+    working_dir: /home/node/app
+    volumes:
+      - ./:/home/node/app
+    restart: always
+    network_mode: host
+    command: "sh ./run.sh cloud"
+    environment:
+      - TZ=Asia/Makassar
+    stdin_open: true
+    tty: true
+    init: true

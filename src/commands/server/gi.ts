@@ -30,7 +30,8 @@ export default async function handle(command: Command) {
 	const paths = {
 		res: {
 			Mode: "client_game_res",
-			Clients: ["client/Android", "client/StandaloneWindows64"],
+			// 'client/Android', 'client/StandaloneWindows64', 'client/iOS', 'client/PS5', 'client/PS4'
+			Clients: ["client/Android", "client/StandaloneWindows64", "client/iOS"],
 			Mappers: [
 				"res_versions_external",
 				"res_versions_medium",
@@ -54,6 +55,10 @@ export default async function handle(command: Command) {
 	const resolvers = { AudioAssets: ["pck"], VideoAssets: ["cuepoint", "usm"], AssetBundles: ["blk"] }
 
 	for (const [version, versionDatas] of Object.entries(list)) {
+		// Cache Folder
+		const CACHE_FILE = `${folderDownload}/md5/${version}.json`
+		const cache = await loadCache(CACHE_FILE)
+
 		for (const versionData of versionDatas) {
 			for (const [liveType, liveData] of Object.entries(versionData)) {
 				const pathData = paths[liveType as keyof typeof paths]
@@ -63,9 +68,6 @@ export default async function handle(command: Command) {
 						const mapperUrl = `${mainUrl}/${fileFolder}/${mapper}`
 						const saveFileFolder = `${folderDownload}/${fileFolder}`
 						const saveFilePath = `${saveFileFolder}/${mapper}`
-
-						const CACHE_FILE = fileFolder + "/cache.json"
-						const cache = await loadCache(CACHE_FILE)
 
 						// Check if URL is cached
 						if (cache[mapperUrl]) {
@@ -81,9 +83,7 @@ export default async function handle(command: Command) {
 						try {
 							fileContent = await fs.readFile(saveFilePath, "utf-8")
 						} catch (error) {
-							log.warn(`File not found: ${saveFilePath}`, error)
-							//cache[mapperUrl] = "not_found"
-							//await saveCache(CACHE_FILE, cache)
+							log.warn(`File not found: ${saveFilePath}`)
 							continue
 						}
 
@@ -115,6 +115,11 @@ export default async function handle(command: Command) {
 									`${fileFolder}/`
 								)
 
+							if (cache[gameFileUrl]) {
+								log.warn(`Skipping: ${gameFileUrl} (Cached)`)
+								continue
+							}
+
 							// Check MD5
 							const expectedMd5 = mapperData.md5 || ""
 							const isValid = await getMD5HashFile(gameFileSavePath, expectedMd5)
@@ -125,7 +130,7 @@ export default async function handle(command: Command) {
 									const isValid2 = await getMD5HashFile(gameFileSavePath, expectedMd5)
 									if (isValid2) {
 										log.info(`Download done and vaild > ${gameFileSavePath}`)
-										cache[mapperUrl] = expectedMd5
+										cache[gameFileUrl] = expectedMd5
 										await saveCache(CACHE_FILE, cache)
 									} else {
 										log.warn(`Download done but not vaild > ${gameFileSavePath}`)
@@ -133,7 +138,7 @@ export default async function handle(command: Command) {
 								}
 							} else {
 								log.info(`MD5 check passed > ${gameFileSavePath}`)
-								cache[mapperUrl] = expectedMd5
+								cache[gameFileUrl] = expectedMd5
 								await saveCache(CACHE_FILE, cache)
 							}
 						}

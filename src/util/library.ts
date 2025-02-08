@@ -5,6 +5,8 @@ import https from "https"
 import crypto from "crypto"
 import os from "os"
 import path from "path"
+import { createWriteStream } from "fs"
+import { pipeline } from "stream/promises"
 
 const log = new Logger("Library")
 
@@ -48,6 +50,7 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 	link = trimAny(removeControlChars(link))
 	fileFullPath = trimAny(removeControlChars(fileFullPath))
 
+	const fileName = path.basename(fileFullPath)
 	const dir = path.dirname(fileFullPath)
 	await fs.mkdir(dir, { recursive: true }).catch((err) => log.errorNoStack(`Failed to create directory: ${dir}`, err))
 
@@ -55,6 +58,7 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 		.access(fileFullPath)
 		.then(() => true)
 		.catch(() => false)
+
 	if (fileExists) {
 		const isRemove = await fs
 			.unlink(fileFullPath)
@@ -63,21 +67,23 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 		log.warn(`Found file ${fileFullPath}, removed: ${isRemove}`)
 	}
 
-	log.debug(`Start downloading file ${link} > ${fileFullPath}`)
+	log.debug(`Start downloading file: ${fileName} from ${link}`)
 
 	let attempt = 0
 	while (attempt < maxRetries) {
 		try {
+			const startTime = Date.now()
+
 			const response = await axios.get(link, {
-				responseType: "arraybuffer",
+				responseType: "stream",
 				timeout: 1000 * 300,
 				httpsAgent: new https.Agent({
 					rejectUnauthorized: false
 				})
 			})
 
-			if (response.status == 404) {
-				log.errorNoStack(`File ${link} not found1`)
+			if (response.status === 404) {
+				log.errorNoStack(`File ${link} not found`)
 				return false
 			}
 			if (response.status !== 200) {
@@ -86,27 +92,61 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 				continue
 			}
 
-			const isSave = await fs
-				.writeFile(fileFullPath, response.data)
-				.then(() => true)
-				.catch((err) => {
-					log.errorNoStack(`Failed to save file ${fileFullPath}:`, err)
-					return false
-				})
+			const totalLength = Number(response.headers["content-length"]) || 0
+			let downloadedLength = 0
 
-			log.info(`File saved ${isSave} > ${fileFullPath} > ${link}`)
+			const fileStream = createWriteStream(fileFullPath)
+			let lastUpdate = Date.now()
+
+			response.data.on("data", (chunk: Buffer) => {
+				downloadedLength += chunk.length
+				const elapsed = (Date.now() - startTime) / 1000 // seconds
+				const speed = downloadedLength / elapsed / 1024 / 1024 // MB/s
+
+				// Update progress every 500ms to avoid excessive updates
+				if (Date.now() - lastUpdate > 500) {
+					lastUpdate = Date.now()
+
+					let progressText = ""
+					if (totalLength) {
+						const percent = ((downloadedLength / totalLength) * 100).toFixed(2)
+						const barWidth = 30
+						const completed = Math.round((downloadedLength / totalLength) * barWidth)
+						const progressBar = "[" + "=".repeat(completed) + " ".repeat(barWidth - completed) + "]"
+						progressText = `${progressBar} ${percent}%`
+					} else {
+						progressText = `${downloadedLength} bytes`
+					}
+
+					process.stdout.write(`\rDownloading ${fileName} ${progressText} | ${speed.toFixed(2)} MB/s`)
+				}
+			})
+
+			await pipeline(response.data, fileStream)
+
+			const elapsedTime = (Date.now() - startTime) / 1000
+			const finalSpeed = downloadedLength / elapsedTime / 1024 / 1024 // MB/s
+
+			process.stdout.write(
+				`\r✅ Download complete: ${fileName} | ${elapsedTime.toFixed(2)}s | Speed: ${finalSpeed.toFixed(
+					2
+				)} MB/s\n`
+			)
 			return true
 		} catch (error) {
 			const c = error as AxiosError
 
-			if (c.status == 404) {
-				log.errorNoStack(`File ${link} not found2`)
+			if (c.response?.status === 404) {
+				log.errorNoStack(`File ${link} not found`)
 				return false
 			}
 
-			log.errorNoStack(`Error downloading file: ${link}, try ${attempt}`, c.status, c.message)
+			log.errorNoStack(`Error downloading file: ${link}, attempt ${attempt + 1}`, c.message)
 			attempt++
-			await sleep(5)
+
+			const delay = Math.pow(2, attempt) * 1000 // Exponential backoff
+			log.warn(`Retrying in ${delay / 1000}s...`)
+			await sleep(delay / 1000)
 		}
 	}
 
@@ -144,6 +184,7 @@ export interface Md5Data {
 
 export async function loadCache(CACHE_FILE: string): Promise<Record<string, any>> {
 	try {
+		log.warn(`Loading cache file: ${CACHE_FILE}`)
 		const data = await fs.readFile(CACHE_FILE, "utf-8")
 		return JSON.parse(data)
 	} catch {

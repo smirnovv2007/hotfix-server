@@ -46,7 +46,7 @@ function trimAny(str: string, chars: string = " "): string {
 	return start > 0 || end < str.length ? str.substring(start, end) : str
 }
 
-export async function forceDownload(link: string, fileFullPath: string, maxRetries: number = 3): Promise<boolean> {
+export async function forceDownload(link: string, fileFullPath: string, maxRetries: number = 3): Promise<number> {
 	link = trimAny(removeControlChars(link))
 	fileFullPath = trimAny(removeControlChars(fileFullPath))
 
@@ -84,7 +84,7 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 
 			if (response.status === 404) {
 				log.errorNoStack(`File ${link} not found`)
-				return false
+				return -1
 			}
 			if (response.status !== 200) {
 				log.errorNoStack(`File failed to download ${link}:`, response.statusText)
@@ -164,13 +164,13 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 					2
 				)} MB/s\n`
 			)
-			return true
+			return 0
 		} catch (error) {
 			const c = error as AxiosError
 
 			if (c.response?.status === 404) {
 				log.errorNoStack(`File ${link} not found`)
-				return false
+				return -1
 			}
 
 			log.errorNoStack(`Error downloading file: ${link}, attempt ${attempt + 1}`, c.message)
@@ -183,7 +183,7 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 	}
 
 	log.errorNoStack(`Failed to download file after ${maxRetries} attempts: ${link}`)
-	return false
+	return -2
 }
 
 export function getMD5Hash(inputString: string): string {

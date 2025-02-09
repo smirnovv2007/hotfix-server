@@ -11,18 +11,39 @@ export default async function handle(command: Command) {
 
 	const list = {
 		"5.0_live": [
-			{ client: { Version: 26487341, Suffix: "57a90bbd52" } },
-			{ clientSilence: { Version: 26530839, Suffix: "185bf02ea7" } },
-			{ res: { Version: 26161852, Suffix: "4c9dae0f9a" }, client: { Version: 26547926, Suffix: "3d43078d67" } },
 			{
-				res: { Version: 26458901, Suffix: "befdda25ff" },
+				client: { Version: 27173400, Suffix: "b79a0d313d" },
+				clientSilence: { Version: 27370672, Suffix: "da441c29cf" },
+				res: { Version: 26885261, Suffix: "05bfe00485" }
+			}
+			/*
+			{
+				client: { Version: 26487341, Suffix: "57a90bbd52" }
+			},
+			{
+				clientSilence: { Version: 26530839, Suffix: "185bf02ea7" }
+			},
+			{
+				res: { Version: 26161852, Suffix: "4c9dae0f9a" },
+				client: { Version: 26547926, Suffix: "3d43078d67" }
+			},
+			{
+				//res: { Version: 26458901, Suffix: "befdda25ff" },
 				clientSilence: { Version: 26594938, Suffix: "e3714681f7" },
 				client: { Version: 26594938, Suffix: "e3714681f7" }
 			},
 			{
-				res: { Version: 26709834, Suffix: "034791c61b" },
+				//res: { Version: 26709834, Suffix: "034791c61b" },
 				clientSilence: { Version: 26720294, Suffix: "79e8f3e212" },
 				client: { Version: 26720294, Suffix: "79e8f3e212" }
+			}
+            */
+		],
+		"5.3_live": [
+			{
+				client: { Version: 29858484, Suffix: "07afd11c59" },
+				clientSilence: { Version: 29858484, Suffix: "07afd11c59" },
+				res: { Version: 29828689, Suffix: "f49ab1b204" }
 			}
 		]
 	}

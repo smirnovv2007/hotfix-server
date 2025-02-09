@@ -76,7 +76,7 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 
 			const response = await axios.get(link, {
 				responseType: "stream",
-				timeout: 1000 * 300,
+				timeout: 1000 * 30,
 				httpsAgent: new https.Agent({
 					rejectUnauthorized: false
 				})
@@ -94,31 +94,63 @@ export async function forceDownload(link: string, fileFullPath: string, maxRetri
 
 			const totalLength = Number(response.headers["content-length"]) || 0
 			let downloadedLength = 0
+			let lastUpdate = Date.now()
+			let lastCheckSpeedTime = Date.now()
+			let lastDownloadedLength = 0
+			let slowDownloadCount = 0
 
 			const fileStream = createWriteStream(fileFullPath)
-			let lastUpdate = Date.now()
 
-			response.data.on("data", (chunk: Buffer) => {
+			response.data.on("data", async (chunk: Buffer) => {
 				downloadedLength += chunk.length
 				const elapsed = (Date.now() - startTime) / 1000 // seconds
 				const speed = downloadedLength / elapsed / 1024 / 1024 // MB/s
 
-				// Update progress every 500ms to avoid excessive updates
+				// Check if speed drops below 1MB/s for 10 seconds
+				if (Date.now() - lastCheckSpeedTime >= 10000) {
+					const recentSpeed = (downloadedLength - lastDownloadedLength) / 10 / 1024 / 1024 // MB/s
+					lastDownloadedLength = downloadedLength
+					lastCheckSpeedTime = Date.now()
+
+					if (recentSpeed < 1) {
+						slowDownloadCount++
+						if (slowDownloadCount >= 2) {
+							process.stdout.write(`\n⚠️ Slow speed detected (<1MB/s). Restarting download...\n`)
+							fileStream.close()
+							await fs.unlink(fileFullPath).catch(() => {})
+							return false // Restart download
+						}
+					} else {
+						slowDownloadCount = 0 // Reset if speed recovers
+					}
+				}
+
+				// Update progress every 500ms
 				if (Date.now() - lastUpdate > 500) {
 					lastUpdate = Date.now()
 
 					let progressText = ""
+					let etaText = ""
+
 					if (totalLength) {
 						const percent = ((downloadedLength / totalLength) * 100).toFixed(2)
 						const barWidth = 30
 						const completed = Math.round((downloadedLength / totalLength) * barWidth)
 						const progressBar = "[" + "=".repeat(completed) + " ".repeat(barWidth - completed) + "]"
 						progressText = `${progressBar} ${percent}%`
+
+						// Estimate remaining time
+						if (speed > 0) {
+							const remainingTime = ((totalLength - downloadedLength) / (speed * 1024 * 1024)).toFixed(0)
+							etaText = `ETA: ${remainingTime}s`
+						}
 					} else {
 						progressText = `${downloadedLength} bytes`
 					}
 
-					process.stdout.write(`\rDownloading ${fileName} ${progressText} | ${speed.toFixed(2)} MB/s`)
+					process.stdout.write(
+						`\rDownloading ${fileName} ${progressText} | ${speed.toFixed(2)} MB/s ${etaText}`
+					)
 				}
 			})
 

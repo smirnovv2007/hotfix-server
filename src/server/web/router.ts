@@ -28,7 +28,11 @@ r.get("/data_game/:game/*", async (req: Request, res: Response) => {
 		if (game === "starrails") {
 			domainDL = `https://autopatchos.starrails.com/${url_only}`
 		} else {
-			domainDL = `https://autopatchhk.yuanshen.com/${url_only}`
+			if (url_only.includes("3.2")) {
+				domainDL = `https://ps.yuuki.me/data_game/genshin/${url_only}` // old server yuuki
+			} else {
+				domainDL = `https://autopatchhk.yuanshen.com/${url_only}`
+			}
 		}
 
 		// Define file paths

@@ -150,4 +150,38 @@ export class EndianBinaryReader {
 		const fullHash = this.readBytes(16)
 		return fullHash.toString("hex").toLowerCase()
 	}
+
+	// ---------- New Methods for Design File Parsing ----------
+
+	// Reads a sequence of characters (assumes UTF-8 encoding and one byte per character).
+	readChars(count: number): string {
+		const bytes = this.readBytes(count)
+		return bytes.toString("utf8")
+	}
+
+	// Reads a 16-bit little-endian signed integer.
+	readInt16(): number {
+		const value = this.buffer.readInt16LE(this.offset)
+		this.offset += 2
+		return value
+	}
+
+	// Reads a 7-bit encoded integer (used for string lengths in .NET BinaryReader).
+	read7BitEncodedInt(): number {
+		let count = 0
+		let shift = 0
+		let byteVal: number
+		do {
+			byteVal = this.readByte()
+			count |= (byteVal & 0x7f) << shift
+			shift += 7
+		} while (byteVal & 0x80)
+		return count
+	}
+
+	// Reads a string: first reads a 7-bit encoded integer length, then that many bytes (UTF-8).
+	readString(): string {
+		const length = this.read7BitEncodedInt()
+		return this.readBytes(length).toString("utf8")
+	}
 }

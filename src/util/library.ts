@@ -192,6 +192,12 @@ export function getMD5Hash(inputString: string): string {
 	return hash.digest("hex")
 }
 
+export function extractMD5(url: string) {
+	const md5Regex = /\/([a-f0-9]{32})\./
+	const match = url.match(md5Regex)
+	return match ? match[1] : null
+}
+
 export async function getMD5HashFile(filePath: string, expectedMd5: string): Promise<boolean> {
 	try {
 		// Read file data

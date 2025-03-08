@@ -10,68 +10,38 @@ export default async function handle(command: Command) {
 	const mainUrl = "https://autopatchhk.yuanshen.com"
 
 	// object with the versions sorted in ascending order (make sure the order is correct to avoid 404 download error)
-	const list = {
-		"5.0_live": [
-			{
-				res: { Version: 26161852, Suffix: "4c9dae0f9a" },
-				client: { Version: 26547926, Suffix: "3d43078d67" }
-			},
-			{
-				clientSilence: { Version: 26530839, Suffix: "185bf02ea7" }
-			},
-			{
-				clientSilence: { Version: 26594938, Suffix: "e3714681f7" },
-				client: { Version: 26594938, Suffix: "e3714681f7" }
-			},
-			{
-				clientSilence: { Version: 26720294, Suffix: "79e8f3e212" },
-				client: { Version: 26720294, Suffix: "79e8f3e212" }
-			},
-			{
-				res: { Version: 26885261, Suffix: "05bfe00485" }
-			},
-			{
-				client: { Version: 26487341, Suffix: "57a90bbd52" }
-			},
-			{
-				client: { Version: 27173400, Suffix: "b79a0d313d" },
-				clientSilence: { Version: 27370672, Suffix: "da441c29cf" }
-			}
-		],
-		"5.3_live": [
-			{
-				clientSilence: { Version: 30268382, Suffix: "0ec19ee5e5" }
-			},
-			{
-				client: { Version: 30106004, Suffix: "8a4a5364c3" },
-				res: { Version: 30064194, Suffix: "3e5c6aef48" }
-			},
-			{
-				client: { Version: 29858484, Suffix: "07afd11c59" },
-				clientSilence: { Version: 29858484, Suffix: "07afd11c59" },
-				res: { Version: 29828689, Suffix: "f49ab1b204" }
-			},
-			{
-				client: { Version: 29707439, Suffix: "9d14e2dd86" },
-				clientSilence: { Version: 29707439, Suffix: "9d14e2dd86" },
-				res: { Version: 29705774, Suffix: "7e218277ba" }
-			},
-			{
-				client: { Version: 29634921, Suffix: "664041d3aa" },
-				res: { Version: 29500234, Suffix: "844688026e" }
-			},
-			{
-				clientSilence: { Version: 29549132, Suffix: "c32325d9d4" },
-				res: { Version: 29332470, Suffix: "03eda7a0ec" }
-			}
-		]
-	}
+        const list = {
+	        '1.0_rel': [
+	            {
+	                res: {Version: 1135452, Suffix: "1dda342ed1"},
+	                clientSilence: {Version: 1141718, Suffix: "f1b1d4173a"},
+	                client: {Version: 1146939, Suffix: "35b7968eda"},
+	            },
+	
+	            {
+	                res: {Version: 1139692, Suffix: "d2f2ff22c7"},
+	            },
+	        ],
+	
+	        '1.0_live': [
+	            {
+	                res: {Version: 1284249, Suffix: "ba7ad33643"},
+	                clientSilence: {Version: 1358691, Suffix: "cdc3f383ef"},
+	                client: {Version: 1358691, Suffix: "cdc3f383ef"},
+	            },
+	
+	            {
+	                clientSilence: {Version: 1393824, Suffix: "2599c61c7b"},
+	            },
+	        ]
+        }
 
 	const paths = {
 		res: {
 			Mode: "client_game_res",
 			// 'client/Android', 'client/StandaloneWindows64', 'client/iOS', 'client/PS5', 'client/PS4'
-			Clients: ["client/Android", "client/StandaloneWindows64", "client/iOS"],
+			// Clients: ["client/Android", "client/StandaloneWindows64", "client/iOS"],
+			Clients: ["client/Android"],
 			Mappers: [
 				// res files
 				"res_versions_external",

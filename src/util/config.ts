@@ -8,7 +8,7 @@ export const _ = acfg({
 			title: "Yuuki Hotfix Server - PROD",
 			url: {
 				public: "https://hotfix.yuuki.me",
-				private: "http://2.0.0.101:10030"
+				private: "http://192.168.1.2:10030"
 			},
 			port: {
 				public: 443,
@@ -20,7 +20,7 @@ export const _ = acfg({
 			title: "Yuuki Hotfix Server - DEV",
 			url: {
 				public: "http://2.0.0.101:50030",
-				private: "http://2.0.0.101:50030"
+				private: "http://192.168.1.2:50030"
 			},
 			port: {
 				public: 50020,
